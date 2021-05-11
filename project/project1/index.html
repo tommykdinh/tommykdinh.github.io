@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="author" content="Chris Turner" />
+    <meta name="author" content="Tommy Dinh" />
     
     <link rel="shortcut icon" type="image/x-icon" href="../../img/favicon.ico">
-    <title>Project 1</title>
+    <title>Project 1: Exploratory Data Analysis</title>
     <meta name="generator" content="Hugo 0.83.1" />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="../../css/main.css" />
@@ -54,13 +54,13 @@
       <div class="container">
         <div class="blog-post">
           <h3>
-            <strong><a href="../../project/project1/">Project 1</a></strong>
+            <strong><a href="../../project/project1/">Project 1: Exploratory Data Analysis</a></strong>
           </h3>
         </div>
  
 <div class="blog-title">
           <h4>
-         December 1, 2020 
+         January 1, 0001 
             &nbsp;&nbsp;
             
           </h4>
@@ -72,8 +72,154 @@
               
 
 
-<div id="test-project-1" class="section level2">
-<h2>Test Project 1</h2>
+<p>######Introduction</p>
+<div id="i-chose-my-datasets-after-scouring-the-data-library-that-r-already-has-installed.-i-liked-a-pair-of-datasets-fivethirtyeight-had-to-offer-and-it-met-the-criteria-for-the-project.-both-datasets-are-related-to-each-other.the-first-dataset-contains-employment-and-income-information-based-on-majors-for-undergrads.-the-second-datasets-contains-the-same-information-but-graduate-level-students.-furthermore-the-second-dataset-also-contains-wage-and-employment-information-for-students-who-attended-graduate-school-but-did-not-graduate-unlike-the-the-undergraduate-dataset-which-only-contains-data-for-graduated-students." class="section level1">
+<h1>I chose my datasets after scouring the data library that R already has installed. I liked a pair of datasets fivethirtyeight had to offer and it met the criteria for the project. Both datasets are related to each other.The first dataset contains employment and income information based on majors for undergrads. The second datasets contains the same information but graduate level students. Furthermore, the second dataset also contains wage and employment information for students who attended graduate school but did not graduate, unlike the the undergraduate dataset which only contains data for graduated students.</h1>
+<p>library(tidyverse)
+library(dplyr)
+library(ggplot2)</p>
+<p>#bachelor data
+library(fivethirtyeight)
+head(college_all_ages)
+undergrad &lt;- college_all_ages</p>
+<p>#gradschool data
+head(college_grad_students)
+gradschool &lt;- college_grad_students</p>
+<p>#renaming a column in gradschool dataset to match the unemployment rate variable
+gradschool &lt;- rename(gradschool, unemployment_rate=grad_unemployment_rate)
+head(college_grad_students)</p>
+<p>#remove superfluous data columns
+undergrad &lt;- undergrad %&gt;% select(-major_code)
+gradschool &lt;- gradschool %&gt;% select(-major_code)
+head(undergrad)
+head(gradschool)</p>
+<p>#arrange data by college
+undergrad &lt;- undergrad %&gt;% arrange(major)
+gradschool &lt;- gradschool %&gt;% arrange(major)</p>
+<p>#add column to distinguish gradschool from undergrad
+undergrad<span class="math inline">\(gradschool_attendance &lt;- 0 gradschool\)</span>gradschool_attendance &lt;- 1</p>
+<p>#make the datasets match
+filteredgradschool &lt;- gradschool
+filteredgradschool &lt;- filteredgradschool[-c(4, 12:21)]</p>
+<p>filteredgradschool &lt;- rename(filteredgradschool, total=grad_total, employed=grad_employed,
+employed_fulltime_yearround=grad_employed_fulltime_yearround, unemployed=grad_unemployed)</p>
+<p>filteredgradschool &lt;- rename(filteredgradschool, p25th = grad_p25th, median = grad_median, p75th = grad_p75th)</p>
+<div id="joining" class="section level5">
+<h5>Joining</h5>
+<p>#After performing some wrangling of the data above, I decided to do a full_join because all of the columns match now and I have streamlined the data after adding a column to distinguish bachelor graduate from a graduate level education. Other joins would have created additional columns instead stacking the datasets like intended.</p>
+<p>joined &lt;- full_join(undergrad, filteredgradschool)</p>
+</div>
+<div id="mutate" class="section level3">
+<h3>Mutate</h3>
+<p>joined &lt;- joined %&gt;% mutate(gradschool_attendance=recode(gradschool_attendance, “0” = “No”, “1” = “Yes”))
+joined &lt;- joined %&gt;% mutate(not_employed_yearround = employed - employed_fulltime_yearround)</p>
+</div>
+</div>
+<div id="the-mean-of-all-median-income-of-persons-with-an-undergrad-degree-was-56816-and-the-mean-of-the-median-of-all-median-income-of-persons-with-a-graduate-level-degree-was-76756" class="section level1">
+<h1>The mean of all median income of persons with an undergrad degree was $56,816 and the mean of the median of all median income of persons with a graduate level degree was $76,756</h1>
+<p>joined %&gt;% group_by(gradschool_attendance) %&gt;% summarize(mean_of_median_income = mean(median))</p>
+</div>
+<div id="returns-unemployment-rate-of-students-who-attended-graduate-school-and-only-undergrad." class="section level1">
+<h1>Returns unemployment rate of students who attended graduate school and only undergrad.</h1>
+<p>joined %&gt;% group_by(gradschool_attendance) %&gt;% summarize(total_unemployment_rate = mean(unemployment_rate))</p>
+</div>
+<div id="returns-the-amount-of-people-that-are-employed-yearround-based-upon-graduate-school-attendance." class="section level1">
+<h1>Returns the amount of people that are employed yearround based upon graduate school attendance.</h1>
+<p>joined %&gt;% group_by(gradschool_attendance) %&gt;% summarize(yearroundemployment = mean(employed_fulltime_yearround))</p>
+</div>
+<div id="returns-the-amount-of-people-that-are-not-employed-yearround-based-upon-graduate-school-attendance." class="section level1">
+<h1>Returns the amount of people that are not employed yearround based upon graduate school attendance.</h1>
+<p>joined %&gt;% group_by(gradschool_attendance) %&gt;% summarize(notemployedyearround = mean(not_employed_yearround))</p>
+</div>
+<div id="returns-unemployment-rate-based-upon-major-category." class="section level1">
+<h1>Returns unemployment rate based upon major category.</h1>
+<p>joined %&gt;% group_by(major_category) %&gt;% summarize(unemployment_rate=mean(unemployment_rate))</p>
+</div>
+<div id="returns-average-income-of-combined-education-levels-of-major-categories." class="section level1">
+<h1>Returns average income of combined education levels of major categories.</h1>
+<p>joined %&gt;% group_by(major_category) %&gt;% summarize(median_income = mean(median))</p>
+</div>
+<div id="returns-the-number-of-distinct-major-categories." class="section level1">
+<h1>Returns the number of distinct major categories.</h1>
+<p>joined %&gt;% summarize(n_distinct(major_category))</p>
+</div>
+<div id="returns-the-highest-median-salary." class="section level1">
+<h1>Returns the highest median salary.</h1>
+<p>joined %&gt;% summarize(min(median))</p>
+</div>
+<div id="returns-the-lowest-median-salary" class="section level1">
+<h1>Returns the lowest median salary</h1>
+<p>joined %&gt;% summarize(max(median))</p>
+</div>
+<div id="returns-the-mean-of-the-median-of-all-persons-that-attends-undergrad-or-graduate-school." class="section level1">
+<h1>Returns the mean of the median of all persons that attends undergrad or graduate school.</h1>
+<p>joined %&gt;% summarize(mean(median))</p>
+</div>
+<div id="create-a-new-dataset-for-visualization" class="section level1">
+<h1>Create a new dataset for visualization</h1>
+<p>college &lt;- joined %&gt;% group_by(major_category) %&gt;% summarize(mean_unemployment = mean(unemployment_rate),
+sd_unemployment_rate = sd(unemployment_rate), mean_median= mean(median), sd_median= sd(median))</p>
+</div>
+<div id="as-expected-the-people-who-attended-graduate-school-fared-better-on-nearly-every-category.-completion-of-graduate-school-increased-the-average-median-income-and-decreased-the-unemployment-rate.-however-i-was-surprised-to-see-that-as-a-whole-the-engineering-majors-had-the-highest-overall-median-income.-the-most-shocking-summary-was-to-find-that-there-was-a-major-that-barely-earns-more-than-a-high-school-graduate.-even-when-combined-with-the-earnings-of-a-post-bachelor-degree-income-one-major-only-averages-35000-per-year." class="section level1">
+<h1>As expected, the people who attended graduate school fared better on nearly every category. Completion of graduate school increased the average median income and decreased the unemployment rate. However, I was surprised to see that as a whole, the engineering majors had the highest overall median income. The most shocking summary was to find that there was a major that barely earns more than a high-school graduate. Even when combined with the earnings of a post-bachelor degree income, one major only averages $35,000 per year.</h1>
+<div id="visualization-1" class="section level3">
+<h3>Visualization #1</h3>
+<p>college %&gt;% arrange(mean_median) %&gt;% ggplot(aes(major_category, mean_median)) + geom_bar(stat = “identity” ) +
+ggtitle(“Mean of Median Income Grouped by Major Category”)+
+theme(axis.text.x = element_text(angle=60,hjust=1)) + ylab(“Average of Median Incomes”) +
+xlab(“Major Category”)</p>
+</div>
+</div>
+<div id="this-plot-is-based-off-of-the-dataset-college-which-i-created-that-grouped-all-the-majors-by-their-category.-in-ut-terms-its-like-grouping-biology-and-chemistry-majors-into-the-the-college-of-natural-science.-then-i-calculated-the-mean-of-the-median-income-of-undergrad-and-graduate-students-to-visualize-major-category-college-the-income-of-colleges-regardless-of-education-level.-this-is-a-good-representation-for-students-to-visualize-the-income-of-their-general-interests-before-deciding-which-major-they-want-within-that-college.since-the-variables-are-categorical-it-is-difficult-to-determine-any-sort-of-trend." class="section level1">
+<h1>This plot is based off of the dataset ‘college’ which I created that grouped all the majors by their category. In UT terms, it’s like grouping Biology and Chemistry majors into the the college of Natural Science. Then I calculated the mean of the median income of undergrad and graduate students to visualize major category (college) the income of colleges regardless of education level. This is a good representation for students to visualize the income of their general interests before deciding which major they want within that college.Since the variables are categorical, it is difficult to determine any sort of trend.</h1>
+<div id="visualization-2tidying" class="section level5">
+<h5>Visualization #2/Tidying</h5>
+<p>cormat &lt;- joined %&gt;% select_if(is.numeric) %&gt;% cor(use = “pair”)</p>
+<p>tidycor &lt;- cormat %&gt;% as.data.frame %&gt;% rownames_to_column(“var1”) %&gt;%
+pivot_longer(-1,names_to=“var2”, values_to=“correlation”)</p>
+<p>tidycor %&gt;% ggplot(aes(var1,var2, fill=correlation)) + geom_tile() +
+scale_fill_gradient2(low=“red”, mid=“white”, high=“green”) +
+geom_text(aes(label=round(correlation,2)), color = “black”, size = 2) +
+theme(axis.text.x = element_text(angle=45,hjust=1)) + ggtitle(“Heatmap of Joined Dataset”)</p>
+</div>
+</div>
+<div id="for-this-correlation-heatmap-i-wanted-to-use-all-the-numeric-shared-variables-that-were-present-in-the-joined-dataset.-because-i-was-not-necessarily-expecting-a-correlation-or-even-no-correlation-between-variables-i-wanted-to-view-them-all.-some-parts-of-the-heat-map-are-easy-to-understand-for-me-from-an-economic-standpoint.-such-as-how-the-lowest-25th-percentile-income-majors-are-negatively-correlated-with-unemployment-rate.-this-is-probably-because-there-is-a-saturation-in-the-job-market-so-employers-can-pay-low-wages-and-there-is-are-higher-unemployment-rates.-the-heat-map-shows-in-green-how-positively-correlated-variables-are-and-in-red-how-negatively-correlated-variables-are.-the-more-white-it-is-there-are-very-weak-correlations-such-as-how-there-is-no-correlation-between-unemployment-rates-and-the-number-of-people-that-are-not-employed-yearround." class="section level1">
+<h1>For this correlation heatmap, I wanted to use all the numeric shared variables that were present in the joined dataset. Because I was not necessarily expecting a correlation or even no correlation between variables I wanted to view them all. Some parts of the heat map are easy to understand for me from an economic standpoint. Such as how the lowest 25th percentile income majors are negatively correlated with unemployment rate. This is probably because there is a saturation in the job market so employers can pay low wages and there is are higher unemployment rates. The heat map shows in green how positively correlated variables are and in red how negatively correlated variables are. The more white it is, there are very weak correlations, such as how there is no correlation between unemployment rates and the number of people that are not employed yearround.</h1>
+<div id="visualization-3" class="section level5">
+<h5>Visualization #3</h5>
+<p>high_unemployment &lt;- joined %&gt;% group_by(major) %&gt;% summarize(mean_unemployment = mean(unemployment_rate))
+high_unemployment &lt;- filter(high_unemployment, (mean_unemployment &gt; .06 ))</p>
+<p>high_unemployment %&gt;% arrange(desc(mean_unemployment)) %&gt;% ggplot(aes(mean_unemployment, major)) + geom_bar(stat = “identity” , color = “Blue”, size = 0.25) +
+ggtitle(“Majors with Unemployment Rates Higher Than National Average”) + theme_minimal() + xlab(“Mean of Unemployment %”) + ylab(“Major”)</p>
+</div>
+</div>
+<div id="this-graph-has-been-filtered-to-display-majors-with-an-unemployment-rate-that-is-higher-than-the-national-average-of-6.-these-are-majors-that-that-have-combined-the-unemployment-of-the-sample-size-that-have-a-graduate-level-degree-and-those-that-only-have-completed-undergrad.-this-should-be-a-good-reference-for-incoming-students-to-consider-when-applying-for-colleges-because-even-with-pursuing-further-education-there-may-still-be-difficulty-in-finding-employment." class="section level1">
+<h1>This graph has been filtered to display majors with an unemployment rate that is higher than the national average of 6%. These are majors that that have combined the unemployment of the sample size that have a graduate level degree and those that only have completed undergrad. This should be a good reference for incoming students to consider when applying for colleges, because even with pursuing further education, there may still be difficulty in finding employment.</h1>
+<p>library(cluster)</p>
+<p>clust_data &lt;- select(joined, unemployment_rate, median, p75th)</p>
+<p>sil_width &lt;- vector() #empty vector to hold mean sil width</p>
+<p>for (i in 2:10) {
+kms &lt;- kmeans(clust_data, centers = i) #compute k-means solution
+sil &lt;- silhouette(kms$cluster, dist(clust_data)) #get sil widths
+sil_width[i] &lt;- mean(sil[, 3]) #take averages (higher is better)
+}</p>
+<p>ggplot() + geom_line(aes(x = 1:10, y = sil_width)) + scale_x_continuous(name = “k”,
+breaks = 1:10)
+kmeans &lt;- clust_data %&gt;% kmeans(2)
+kmeans</p>
+</div>
+<div id="i-chose-2-clusters-because-of-the-line-graph-created-had-two-humps-indicating-the-number-of-clusters-that-would-be-best-fit." class="section level1">
+<h1>I chose 2 clusters because of the line graph created had two humps, indicating the number of clusters that would be best fit.</h1>
+<p>kmeansclust &lt;- clust_data %&gt;% as.data.frame %&gt;% mutate(cluster = as.factor(kmeans$cluster))
+kmeansclust</p>
+<p>kmeansclust %&gt;% ggplot(aes(unemployment_rate, median, p75th, color = cluster, alpha = 1/10)) +
+geom_point() + xlab(“Unemployment Rate”) + ylab(“Median Income”)</p>
+</div>
+<div id="it-was-slightly-difficult-to-analyze-this-data-because-of-the-significant-overlap.-furthermore-with-a-topic-like-education-there-is-a-lot-of-variability-in-the-unemployment-and-income.-for-analysis-purposes-it-can-be-argued-that-the-red-represents-higher-paying-jobs-have-lower-unemployment-rates.-the-blue-are-clustered-by-lower-paying-jobs-with-higher-unemployment-rates.-this-would-make-sense-in-an-economical-standpoint-because-of-supply-and-demand.-the-more-saturated-the-market-is-for-a-position-the-less-employees-are-willing-to-pay-them.-the-clusters-are-likely-the-differences-undergraduate-level-of-education-and-graduate-school-level-of-education." class="section level1">
+<h1>It was slightly difficult to analyze this data because of the significant overlap. Furthermore, with a topic like education, there is a lot of variability in the unemployment and income. For analysis purposes, it can be argued that the red represents higher paying jobs have lower unemployment rates. The blue are clustered by lower paying jobs with higher unemployment rates. This would make sense in an economical standpoint because of supply and demand. The more saturated the market is for a position, the less employees are willing to pay them. The clusters are likely the differences undergraduate level of education and graduate school level of education.</h1>
+<p>library(GGally)
+ggpairs(kmeansclust, columns = 1:3, aes(color = cluster, alpha =1/10))</p>
+<p>…</p>
 </div>
 
             

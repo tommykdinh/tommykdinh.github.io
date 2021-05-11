@@ -1,8 +1,181 @@
 ---
-title: "Project 1"
-author: "Me"
-date: "2020-12-01"
-output: html_document
+title: 'Project 1: Exploratory Data Analysis'
+author: "Tommy Dinh TKD422"
+date: ''
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+  pdf_document:
+    toc: no
 ---
 
-## Test Project 1
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F,
+tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
+```
+
+######Introduction
+
+# I chose my datasets after scouring the data library that R already has installed. I liked a pair of datasets fivethirtyeight had to offer and it met the criteria for the project. Both datasets are related to each other.The first dataset contains employment and income information based on majors for undergrads. The second datasets contains the same information but graduate level students. Furthermore, the second dataset also contains wage and employment information for students who attended graduate school but did not graduate, unlike the the undergraduate dataset which only contains data for graduated students.
+
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+
+#bachelor data
+library(fivethirtyeight)
+head(college_all_ages)
+undergrad <- college_all_ages
+
+#gradschool data
+head(college_grad_students)
+gradschool <- college_grad_students
+
+#renaming a column in gradschool dataset to match the unemployment rate variable
+gradschool <- rename(gradschool, unemployment_rate=grad_unemployment_rate)
+head(college_grad_students)
+
+#remove superfluous data columns
+undergrad <- undergrad %>% select(-major_code)
+gradschool <- gradschool %>% select(-major_code)
+head(undergrad)
+head(gradschool)
+
+#arrange data by college
+undergrad <- undergrad %>% arrange(major)
+gradschool <- gradschool %>% arrange(major)
+
+#add column to distinguish gradschool from undergrad
+undergrad$gradschool_attendance <- 0
+gradschool$gradschool_attendance <- 1
+
+#make the datasets match
+filteredgradschool <- gradschool
+filteredgradschool <- filteredgradschool[-c(4, 12:21)]
+
+filteredgradschool <- rename(filteredgradschool, total=grad_total, employed=grad_employed, 
+    employed_fulltime_yearround=grad_employed_fulltime_yearround, unemployed=grad_unemployed)
+
+filteredgradschool <- rename(filteredgradschool, p25th = grad_p25th, median = grad_median, p75th = grad_p75th)
+
+
+##### Joining
+
+#After performing some wrangling of the data above, I decided to do a full_join because all of the columns match now and I have streamlined the data after adding a column to distinguish bachelor graduate from a graduate level education. Other joins would have created additional columns instead stacking the datasets like intended. 
+
+joined <- full_join(undergrad, filteredgradschool)
+
+### Mutate
+
+joined <- joined %>% mutate(gradschool_attendance=recode(gradschool_attendance, "0" = "No", "1" = "Yes"))
+joined <- joined %>% mutate(not_employed_yearround = employed - employed_fulltime_yearround)
+
+# The mean of all median income of persons with an undergrad degree was $56,816 and the mean of the median of all median income of persons with a graduate level degree was $76,756
+joined %>% group_by(gradschool_attendance) %>% summarize(mean_of_median_income = mean(median))
+
+# Returns unemployment rate of students who attended graduate school and only undergrad.
+joined %>% group_by(gradschool_attendance) %>% summarize(total_unemployment_rate = mean(unemployment_rate))
+
+# Returns the amount of people that are employed yearround based upon graduate school attendance.
+joined %>% group_by(gradschool_attendance) %>% summarize(yearroundemployment = mean(employed_fulltime_yearround))
+
+# Returns the amount of people that are not employed yearround based upon graduate school attendance. 
+joined %>% group_by(gradschool_attendance) %>% summarize(notemployedyearround = mean(not_employed_yearround))
+
+# Returns unemployment rate based upon major category.
+joined %>% group_by(major_category) %>% summarize(unemployment_rate=mean(unemployment_rate))
+
+# Returns average income of combined education levels of major categories. 
+joined %>% group_by(major_category) %>% summarize(median_income = mean(median))
+
+# Returns the number of distinct major categories.
+joined %>% summarize(n_distinct(major_category))
+
+# Returns the highest median salary.
+joined %>% summarize(min(median))
+
+# Returns the lowest median salary
+joined %>% summarize(max(median))
+
+# Returns the mean of the median of all persons that attends undergrad or graduate school.
+joined %>% summarize(mean(median))
+
+# Create a new dataset for visualization
+college <- joined %>% group_by(major_category) %>% summarize(mean_unemployment = mean(unemployment_rate), 
+          sd_unemployment_rate = sd(unemployment_rate), mean_median= mean(median), sd_median= sd(median))
+
+# As expected, the people who attended graduate school fared better on nearly every category. Completion of graduate school increased the average median income and decreased the unemployment rate. However, I was surprised to see that as a whole, the engineering majors had the highest overall median income. The most shocking summary was to find that there was a major that barely earns more than a high-school graduate. Even when combined with the earnings of a post-bachelor degree income, one major only averages $35,000 per year.
+
+### Visualization #1
+
+college %>% arrange(mean_median) %>% ggplot(aes(major_category, mean_median)) + geom_bar(stat = "identity" ) + 
+  ggtitle("Mean of Median Income Grouped by Major Category")+
+  theme(axis.text.x = element_text(angle=60,hjust=1)) + ylab("Average of Median Incomes") +
+  xlab("Major Category")
+
+# This plot is based off of the dataset 'college' which I created that grouped all the majors by their category. In UT terms, it's like grouping Biology and Chemistry majors into the the college of Natural Science. Then I calculated the mean of the median income of undergrad and graduate students to visualize major category (college) the income of colleges regardless of education level. This is a good representation for students to visualize the income of their general interests before deciding which major they want within that college.Since the variables are categorical, it is difficult to determine any sort of trend. 
+
+##### Visualization #2/Tidying
+
+cormat <- joined %>% select_if(is.numeric) %>% cor(use = "pair")
+
+tidycor <- cormat %>% as.data.frame %>% rownames_to_column("var1") %>% 
+  pivot_longer(-1,names_to="var2", values_to="correlation")
+
+tidycor %>% ggplot(aes(var1,var2, fill=correlation)) + geom_tile() +
+  scale_fill_gradient2(low="red", mid="white", high="green") +
+  geom_text(aes(label=round(correlation,2)), color = "black", size = 2) +
+  theme(axis.text.x = element_text(angle=45,hjust=1)) + ggtitle("Heatmap of Joined Dataset")
+
+# For this correlation heatmap, I wanted to use all the numeric shared variables that were present in the joined dataset. Because I was not necessarily expecting a correlation or even no correlation between variables I wanted to view them all. Some parts of the heat map are easy to understand for me from an economic standpoint. Such as how the lowest 25th percentile income majors are negatively correlated with unemployment rate. This is probably because there is a saturation in the job market so employers can pay low wages and there is are higher unemployment rates. The heat map shows in green how positively correlated variables are and in red how negatively correlated variables are. The more white it is, there are very weak correlations, such as how there is no correlation between unemployment rates and the number of people that are not employed yearround. 
+
+
+##### Visualization #3
+
+high_unemployment <- joined %>% group_by(major) %>% summarize(mean_unemployment = mean(unemployment_rate))
+high_unemployment <- filter(high_unemployment, (mean_unemployment > .06 ))
+
+high_unemployment %>% arrange(desc(mean_unemployment)) %>% ggplot(aes(mean_unemployment, major)) + geom_bar(stat = "identity" , color = "Blue", size = 0.25) + 
+  ggtitle("Majors with Unemployment Rates Higher Than National Average") + theme_minimal() + xlab("Mean of Unemployment %") + ylab("Major")
+
+# This graph has been filtered to display majors with an unemployment rate that is higher than the national average of 6%. These are majors that that have combined the unemployment of the sample size that have a graduate level degree and those that only have completed undergrad. This should be a good reference for incoming students to consider when applying for colleges, because even with pursuing further education, there may still be difficulty in finding employment. 
+
+library(cluster)
+
+clust_data <- select(joined, unemployment_rate, median, p75th)
+
+sil_width <- vector()  #empty vector to hold mean sil width
+
+for (i in 2:10) {
+  kms <- kmeans(clust_data, centers = i)  #compute k-means solution
+  sil <- silhouette(kms$cluster, dist(clust_data))  #get sil widths
+  sil_width[i] <- mean(sil[, 3])  #take averages (higher is better)
+}
+
+ggplot() + geom_line(aes(x = 1:10, y = sil_width)) + scale_x_continuous(name = "k", 
+                                                                        breaks = 1:10)
+kmeans <- clust_data %>% kmeans(2)
+kmeans
+
+# I chose 2 clusters because of the line graph created had two humps, indicating the number of clusters that would be best fit. 
+
+kmeansclust <- clust_data %>% as.data.frame %>% mutate(cluster = as.factor(kmeans$cluster))
+kmeansclust
+
+kmeansclust %>% ggplot(aes(unemployment_rate, median, p75th, color = cluster, alpha = 1/10)) + 
+  geom_point() + xlab("Unemployment Rate") + ylab("Median Income")
+
+# It was slightly difficult to analyze this data because of the significant overlap. Furthermore, with a topic like education, there is a lot of variability in the unemployment and income. For analysis purposes, it can be argued that the red represents higher paying jobs have lower unemployment rates. The blue are clustered by lower paying jobs with higher unemployment rates. This would make sense in an economical standpoint because of supply and demand. The more saturated the market is for a position, the less employees are willing to pay them. The clusters are likely the differences undergraduate level of education and graduate school level of education. 
+
+library(GGally)
+ggpairs(kmeansclust, columns = 1:3, aes(color = cluster, alpha =1/10))
+
+...
+
+
+
+
+

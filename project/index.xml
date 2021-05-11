@@ -5,24 +5,24 @@
     <link>/project/</link>
     <description>Recent content in Projects on Chris Turner</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-US</language>
-    <lastBuildDate>Tue, 01 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/project/index.xml" rel="self" type="application/rss+xml" />
+    <language>en-US</language><atom:link href="/project/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Project 1</title>
+      <title>Project 1: Exploratory Data Analysis</title>
       <link>/project/project1/</link>
-      <pubDate>Tue, 01 Dec 2020 00:00:00 +0000</pubDate>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/project/project1/</guid>
-      <description> Test Project 1  </description>
+      <description>######Introduction
+I chose my datasets after scouring the data library that R already has installed. I liked a pair of datasets fivethirtyeight had to offer and it met the criteria for the project. Both datasets are related to each other.The first dataset contains employment and income information based on majors for undergrads. The second datasets contains the same information but graduate level students. Furthermore, the second dataset also contains wage and employment information for students who attended graduate school but did not graduate, unlike the the undergraduate dataset which only contains data for graduated students.</description>
     </item>
     
     <item>
-      <title>Project 2</title>
+      <title>Project 2: Modeling, Testing, and Predicting</title>
       <link>/project/project2/</link>
-      <pubDate>Tue, 01 Dec 2020 00:00:00 +0000</pubDate>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/project/project2/</guid>
-      <description> Test Project 2  </description>
+      <description>Modeling Instructions A knitted R Markdown document (preferably HTML) and the raw R Markdown file (as .Rmd) should both be submitted to Canvas by 11:59pm on the due date. These two documents will be graded jointly, so they must be consistent (i.e., don’t change the R Markdown file without also updating the knitted document). In the .Rmd file for Project 2, you can copy the first code-chunk into your project .</description>
     </item>
     
   </channel>
